@@ -4,6 +4,71 @@ import { getData, setData, addItem, updateItem, deleteItem, generateId } from '.
 // Simulate network delay
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Mock Chatbot API
+export const chatbotAPI = {
+  sendMessage: async ({ message, userId, context }) => {
+    await delay();
+    
+    // Import chatbot service for processing
+    const { chatbotAPI: chatbotService } = await import('./chatbotService');
+    return await chatbotService.sendMessage({ message, userId, context });
+  }
+};
+
+// Mock Authentication API
+export const authAPI = {
+  login: async (credentials) => {
+    await delay();
+    const users = getData('users');
+    const user = users.find(u => 
+      u.email === credentials.email && u.password === credentials.password
+    );
+    
+    if (user) {
+      const { password, ...userWithoutPassword } = user;
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      return { 
+        data: { 
+          user: userWithoutPassword, 
+          token: `mock-token-${user.id}` 
+        } 
+      };
+    } else {
+      throw new Error('Invalid credentials');
+    }
+  },
+
+  logout: async () => {
+    await delay();
+    localStorage.removeItem('currentUser');
+    return { data: { message: 'Logged out successfully' } };
+  },
+
+  getCurrentUser: () => {
+    const user = localStorage.getItem('currentUser');
+    return user ? JSON.parse(user) : null;
+  },
+
+  register: async (userData) => {
+    await delay();
+    const users = getData('users');
+    const existingUser = users.find(u => u.email === userData.email);
+    
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+
+    const newUser = addItem('users', {
+      ...userData,
+      role: userData.role || 'customer',
+      createdAt: new Date().toISOString()
+    });
+
+    const { password, ...userWithoutPassword } = newUser;
+    return { data: userWithoutPassword };
+  }
+};
+
 // Mock Chef API
 export const chefAPI = {
   getAllChefs: async () => {
@@ -231,6 +296,66 @@ export const menuAPI = {
       availabilityUpdatedAt: new Date().toISOString()
     });
     return { data: updatedItem };
+  }
+};
+
+// Mock Booking API
+export const bookingAPI = {
+  createBooking: async (bookingData) => {
+    await delay();
+    const newBooking = addItem('bookings', {
+      ...bookingData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      status: bookingData.status || 'confirmed'
+    });
+    
+    // Update table status to booked for the time slot
+    const tables = getData('tables');
+    const updatedTables = tables.map(table => 
+      table.id === bookingData.tableId 
+        ? { ...table, status: 'booked', currentBooking: newBooking.id }
+        : table
+    );
+    setData('tables', updatedTables);
+    
+    return { data: newBooking };
+  },
+
+  getUserBookings: async (userId) => {
+    await delay();
+    const bookings = getData('bookings');
+    const userBookings = bookings.filter(booking => booking.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return { data: userBookings };
+  },
+
+  getAllBookings: async () => {
+    await delay();
+    const bookings = getData('bookings');
+    return { data: bookings };
+  },
+
+  updateBooking: async (id, updates) => {
+    await delay();
+    const updatedBooking = updateItem('bookings', id, updates);
+    return { data: updatedBooking };
+  },
+
+  cancelBooking: async (id) => {
+    await delay();
+    const booking = updateItem('bookings', id, { status: 'cancelled' });
+    
+    // Free up the table
+    const tables = getData('tables');
+    const updatedTables = tables.map(table => 
+      table.currentBooking === id 
+        ? { ...table, status: 'available', currentBooking: null }
+        : table
+    );
+    setData('tables', updatedTables);
+    
+    return { data: booking };
   }
 };
 

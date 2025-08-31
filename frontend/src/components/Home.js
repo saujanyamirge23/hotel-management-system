@@ -1,9 +1,11 @@
 import React from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 function Home() {
   const navigate = useNavigate();
+  const { user, isManager, isCustomer, isAuthenticated } = useAuth();
 
   return (
     <div>
@@ -23,15 +25,26 @@ function Home() {
             >
               🍽️ Dine With Us
             </Button>
-            <Button 
-              variant="outline-light" 
-              size="lg" 
-              onClick={() => navigate('/manager')}
-              className="px-4 py-2"
-            >
-              👨‍💼 Management Portal
-            </Button>
+            {isManager() && (
+              <Button 
+                variant="outline-light" 
+                size="lg" 
+                onClick={() => navigate('/manager')}
+                className="px-4 py-2"
+              >
+                👨‍💼 Management Portal
+              </Button>
+            )}
           </div>
+          
+          {user && (
+            <div className="text-center mt-3">
+              <p className="text-light">
+                Welcome back, <strong>{user.name}</strong>! 
+                {isManager() ? ' You have full access to both customer and manager features.' : ' Enjoy your dining experience!'}
+              </p>
+            </div>
+          )}
         </Container>
       </section>
 
@@ -60,7 +73,7 @@ function Home() {
                 </p>
                 <Button 
                   variant="outline-primary" 
-                  onClick={() => navigate('/customer/menu')}
+                  onClick={() => navigate('/browse/menu')}
                 >
                   View Menu
                 </Button>
@@ -79,9 +92,9 @@ function Home() {
                 </p>
                 <Button 
                   variant="outline-primary" 
-                  onClick={() => navigate('/customer/booking')}
+                  onClick={() => navigate('/browse/tables')}
                 >
-                  Book Table
+                  Check Availability
                 </Button>
               </Card.Body>
             </Card>
@@ -98,9 +111,15 @@ function Home() {
                 </p>
                 <Button 
                   variant="outline-primary" 
-                  onClick={() => navigate('/customer/feedback')}
+                  onClick={() => {
+                    if (isAuthenticated()) {
+                      navigate('/customer/feedback');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
                 >
-                  Give Feedback
+                  {isAuthenticated() ? 'Give Feedback' : 'Sign in for Feedback'}
                 </Button>
               </Card.Body>
             </Card>
@@ -209,14 +228,20 @@ function Home() {
                   <Button 
                     variant="primary" 
                     size="lg" 
-                    onClick={() => navigate('/customer/booking')}
+                    onClick={() => {
+                      if (isAuthenticated()) {
+                        navigate('/customer/booking');
+                      } else {
+                        navigate('/browse/tables');
+                      }
+                    }}
                   >
-                    🎯 Reserve Your Table
+                    🎯 {isAuthenticated() ? 'Reserve Your Table' : 'Check Availability'}
                   </Button>
                   <Button 
                     variant="outline-primary" 
                     size="lg" 
-                    onClick={() => navigate('/customer/menu')}
+                    onClick={() => navigate('/browse/menu')}
                   >
                     📋 Explore Menu
                   </Button>

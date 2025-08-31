@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hotel Management System
 
 A comprehensive hotel management system with React.js frontend and Spring Boot microservices backend. The system can run in two modes: **Full Stack** (with backend services) or **Frontend-Only** (with mock data for demo purposes).
@@ -232,3 +233,6 @@ For support or questions, please open an issue in the GitHub repository.
 ---
 
 **Note**: This system can run completely frontend-only with mock data, making it perfect for demos, development, and deployment without backend infrastructure.
+=======
+# hotel-management-system
+>>>>>>> 36b3e5f42da3ff19315692b41e24b7196b0909fb
